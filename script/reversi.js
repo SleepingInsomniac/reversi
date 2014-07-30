@@ -27,6 +27,7 @@ function ReversiGame() {
 			_this.board.push(row);
 		}
 		_this.board.state = function(cords) {
+			if (cords[0] < 0 || cords[0] > 7 || cords[1] < 0 || cords[1] > 7) return null;
 			return _this.board[cords[0]][cords[1]];
 		}
 	}
@@ -41,9 +42,10 @@ function ReversiGame() {
 					id: i.toString()+j.toString(),
 					onclick: function() {
 						var d;
-						if (d = validMove(this)) {
+						if (vd = validMove(this)) {
 							_this.placePiece(this);
-							claim(this, d);
+							for (var d in vd)
+								claim(this, vd[d]);
 							changeTurn();
 							// _this.placePiece(this);
 						}
@@ -84,12 +86,15 @@ function ReversiGame() {
 		}
 		
 		// check the 8 directions
+		var vd = [];
 		for (var y = -1; y < 2; y++) {
 			for (var x = -1; x < 2; x++) {
-				if (sandwich(pos, [y,x], 0)) return [y,x];
+				if (sandwich(pos, [y,x], 0)) vd.push([y,x]);
 			}
 		}
-				
+		
+		if (vd.length > 0) return vd;
+		
 		return false;
 	}
 	
