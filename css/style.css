@@ -1,22 +1,30 @@
 @font-face {
-  font-family: 'Ubuntu';
-  src: url("fonts/Ubuntu-Bold.ttf");
-  font-weight: bold;
-  font-style: normal; }
+    font-family: 'Ubuntu';
+    src: url("fonts/Ubuntu-Bold.ttf");
+    font-weight: bold;
+    font-style: normal;
+}
 @font-face {
-  font-family: 'Ubuntu';
-  src: url("fonts/Ubuntu-Medium.ttf");
-  font-weight: normal;
-  font-style: normal; }
+    font-family: 'Ubuntu';
+    src: url("fonts/Ubuntu-Medium.ttf");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@-webkit-keyframes dropIn { 0% { -webkit-transform: scale(1.8); } 100% { -webkit-transform: scale(1); } }
+   @-moz-keyframes dropIn { 0% {    -moz-transform: scale(1.8); } 100% {    -moz-transform: scale(1); } }
+    @-ms-keyframes dropIn { 0% {     -ms-transform: scale(1.8); } 100% {     -ms-transform: scale(1); } }
+     @-o-keyframes dropIn { 0% {      -o-transform: scale(1.8); } 100% {      -o-transform: scale(1); } }
+        @keyframes dropIn { 0% {         transform: scale(1.8); } 100% {         transform: scale(1); } }
 
 * {
 	font-family: helvetica, sans-serif;
-/*	-moz-box-sizing: border-box;*/
 /*	box-sizing: border-box;*/
 	position: relative;
 }
 
 html, body {
+/*	box-sizing: border-box;*/
 	width: 100%;
 	height: 100%; 
 	padding: 0;
@@ -24,13 +32,26 @@ html, body {
 }
 
 body {
-/*	background-image: url('square_bg.png');*/
+	background-image: url('square_bg.png');
 }
 
 div {
 	margin: 0;
 	padding: 0;
 	border: 0;
+}
+
+h1 {
+	margin: 0;
+	padding: 30px;
+}
+
+div.info {
+	width: 100%;
+	text-align: center;
+	text-transform: capitalize;
+	font-family: "Ubuntu";
+	color: #555;
 }
 
 div.row {
@@ -48,13 +69,10 @@ div.row:nth-child(2n-1) div.cell:nth-child(2n-1) {
 	background-color: rgba(150,100,0,0.3);
 }
 
-div.cell:hover {
-	background-color: #CCC;
-	cursor: pointer;
-}
+div.cell:hover,
 div.row:nth-child(2n) div.cell:nth-child(2n):hover,
 div.row:nth-child(2n-1) div.cell:nth-child(2n-1):hover {
-	background-color: #CCC;
+	background-color: rgba(0,0,0,0.5);
 	cursor: pointer;
 }
 
@@ -68,24 +86,41 @@ div.gamePiece {
 	border: 1px solid #888;
 /*	border-bottom: 2px solid #222;*/
 	box-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+	-webkit-animation: dropIn 0.3s 1 linear;
+	   -moz-animation: dropIn 0.3s 1 linear;
+	    -ms-animation: dropIn 0.3s 1 linear;
+	     -o-animation: dropIn 0.3s 1 linear;
+	        animation: dropIn 0.3s 1 linear;
 }
 
 div.gamePiece.white {
-	background-color: rgba(255,255,255,0.7);
+/*	background-color: rgba(255,255,255,0.7);*/
+	background: -moz-radial-gradient(center, ellipse cover, #ffffff 12%, #f2ebcd 100%); /* FF3.6+ */
+	background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(12%,#ffffff), color-stop(100%,#f2ebcd)); /* Chrome,Safari4+ */
+	background: -webkit-radial-gradient(center, ellipse cover, #ffffff 12%,#f2ebcd 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-radial-gradient(center, ellipse cover, #ffffff 12%,#f2ebcd 100%); /* Opera 12+ */
+	background: -ms-radial-gradient(center, ellipse cover, #ffffff 12%,#f2ebcd 100%); /* IE10+ */
+	background: radial-gradient(ellipse at center, #ffffff 12%,#f2ebcd 100%); /* W3C */
+	
 }
 div.gamePiece.black {
-	background-color: rgba(0,0,0,0.5);
+/*	background-color: rgba(0,0,0,0.5);*/
+	background: -moz-radial-gradient(center, ellipse cover, #666666 13%, #131313 100%); /* FF3.6+ */
+	background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(13%,#666666), color-stop(100%,#131313)); /* Chrome,Safari4+ */
+	background: -webkit-radial-gradient(center, ellipse cover, #666666 13%,#131313 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-radial-gradient(center, ellipse cover, #666666 13%,#131313 100%); /* Opera 12+ */
+	background: -ms-radial-gradient(center, ellipse cover, #666666 13%,#131313 100%); /* IE10+ */
+	background: radial-gradient(ellipse at center, #666666 13%,#131313 100%); /* W3C */
+	
 }
 
 #gameBoard {
 	border: 1px solid #DDD;
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	margin: -200px 0 0 -200px;
+	width: 400px;
 	border-radius: 3px;
 	box-shadow: 0 0 10px rgba(0,0,0,0.1);
 	background-image: url('purty_wood.png');
+	margin: 10px auto;
 }
 
 ::selection {

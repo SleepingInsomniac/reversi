@@ -12,11 +12,16 @@ function getEl(id) {
 	return document.getElementById(id);
 }
 
-function ReversiGame() {
+function ReversiGame(parentElement) {
+	if (!parentElement) parentElement = document.body;
+	
 	this.turn = 0; // white = 0, black = 1
 	this.board = [];
 	this.moves = -4;
+	this.infoDiv = elm('div', {className: 'info'});
+	
 	var _this = this;
+	var players = ['white', 'black'];
 	
 	var simulateGameBoard = function() {
 		_this.board = [];
@@ -56,6 +61,21 @@ function ReversiGame() {
 		return board;
 	}
 	
+	var countScore = function() {
+		var whiteScore = 0;
+		var blackScore = 0;
+		
+		for (var i = 0; i < 7; i++) {
+			for (var j = 0; j < 7; j++) {
+				var state = _this.board.state([i,j]);
+				if (state == 0) whiteScore++;
+				if (state == 1) blackScore++;
+			}
+		}
+		
+		return [whiteScore, blackScore];
+	}
+	
 	var resolvePos = function(cell) {
 		return cell.id.split('').map(function(s) {
 			return parseInt(s);
@@ -64,6 +84,10 @@ function ReversiGame() {
 	
 	var changeTurn = function() {
 		_this.turn = Math.abs(_this.turn - 1);
+		var scores = countScore();
+		_this.infoDiv.innerHTML = '';
+		elm('h1', {innerHTML: players[_this.turn]+"'s turn."}, _this.infoDiv);
+		elm('p', {innerHTML: 'White: '+scores[0]+', Black: '+scores[1]}, _this.infoDiv);
 	}
 	
 	var validMove = function(cell) {
@@ -115,7 +139,6 @@ function ReversiGame() {
 		var pos = resolvePos(cell);
 		_this.moves++;
 		_this.board[pos[0]][pos[1]] = _this.turn;
-		var players = ['white', 'black'];
 		cell.innerHTML = '';
 		var piece = elm('div', {
 			className: 'gamePiece '+players[_this.turn]
@@ -125,7 +148,8 @@ function ReversiGame() {
 	
 	// set up initial state
 	simulateGameBoard();
-	document.body.appendChild(createGameBoard());
+	parentElement.appendChild(this.infoDiv);
+	parentElement.appendChild(createGameBoard());
 	var cords = ['33', '34', '44', '43'];
 	for(var i in cords) {
 		this.placePiece(getEl(cords[i]));
