@@ -12,151 +12,225 @@ function getEl(id) {
 	return document.getElementById(id);
 }
 
-function ReversiGame(parentElement) {
-	if (!parentElement) parentElement = document.body;
-	
-	this.turn = 0; // white = 0, black = 1
-	this.board = [];
-	this.moves = -4;
-	this.infoDiv = elm('div', {className: 'info'});
-	
-	var _this = this;
-	var players = ['white', 'black'];
-	
-	var simulateGameBoard = function() {
-		_this.board = [];
-		for(var i = 0; i < 8; i++) {
-			row = [];
-			for(var j = 0; j < 8; j++)
-				row.push(null); // state 0 = white, 1 = black 
-			_this.board.push(row);
-		}
-		_this.board.state = function(cords) {
-			if (cords[0] < 0 || cords[0] > 7 || cords[1] < 0 || cords[1] > 7) return null;
-			return _this.board[cords[0]][cords[1]];
-		}
-	}
-	
-	var createGameBoard = function() {
-		var board = elm('div', {id: 'gameBoard'});
-		for(var i = 0; i < 8; i++) {
-			var row = elm('div', {className: 'row', id: 'row_'+i}, board);
-			for(var j = 0; j < 8; j++) {
-				var cell = elm('div', {
-					className: 'cell',
-					id: i.toString()+j.toString(),
-					onclick: function() {
-						var d;
-						if (vd = validMove(this)) {
-							_this.placePiece(this);
-							for (var d in vd)
-								claim(this, vd[d]);
-							changeTurn();
-							// _this.placePiece(this);
-						}
-					}
-				}, row);
-			}
-		}
-		return board;
-	}
-	
-	var countScore = function() {
-		var whiteScore = 0;
-		var blackScore = 0;
-		
-		for (var i = 0; i < 7; i++) {
-			for (var j = 0; j < 7; j++) {
-				var state = _this.board.state([i,j]);
-				if (state == 0) whiteScore++;
-				if (state == 1) blackScore++;
-			}
-		}
-		
-		return [whiteScore, blackScore];
-	}
-	
-	var resolvePos = function(cell) {
-		return cell.id.split('').map(function(s) {
-			return parseInt(s);
-		});
-	}
-	
-	var changeTurn = function() {
-		_this.turn = Math.abs(_this.turn - 1);
-		var scores = countScore();
-		_this.infoDiv.innerHTML = '';
-		elm('h1', {innerHTML: players[_this.turn]+"'s turn."}, _this.infoDiv);
-		elm('p', {innerHTML: 'White: '+scores[0]+', Black: '+scores[1]}, _this.infoDiv);
-	}
-	
-	var validMove = function(cell) {
-		var pos = resolvePos(cell);
-		if (_this.board.state(pos) != null) return false; // occupied
-		
-		// position, direction, search
-		var sandwich = function(p, d, s) {
-			p = [p[0] + d[0], p[1] + d[1]] // update position
-			
-			if (_this.board.state(p) == null) {
-				return false;
-			}
-			
-			if (_this.board.state(p) == _this.turn) {
-				return (s > 0);
-			}
-			
-			return sandwich(p, d, (s + 1)); // continue
-		}
-		
-		// check the 8 directions
-		var vd = [];
-		for (var y = -1; y < 2; y++) {
-			for (var x = -1; x < 2; x++) {
-				if (sandwich(pos, [y,x], 0)) vd.push([y,x]);
-			}
-		}
-		
-		if (vd.length > 0) return vd;
-		
-		return false;
-	}
-	
-	var claim = function(cell, d, s) {
-		if (!s) s = 0;
-		p = resolvePos(cell);
-		p = [p[0] + d[0], p[1] + d[1]] // update position
+function randInt(max, min) {
+	return Math.floor(Math.random() * (max - min)) + min;
+}
 
-		while (_this.board.state(p) == Math.abs(_this.turn - 1)) {
-			_this.placePiece(getEl(p.join('')));
-			p = [p[0] + d[0], p[1] + d[1]] // update position
-		}
+function GameBoard(size, game) {
+	this.size = size;
+	this.element = elm('div', {id:'gameBoard'});
+	
+	var _board = this;
 		
+	var Square = function(container, x, y){
+		var _this = this;
+		this.x = x;
+		this.y = y;
+		this.element = elm('div', {
+			className: 'cell',
+			onclick: function() {
+				game.makeMove(_this);
+			}
+		}, container);
+	}
+	Square.prototype = {
+		_state: null,
+		get state() {
+			return this._state;
+		},
+		set state(value) {
+			this._state = value;
+			this.element.innerHTML = '';
+			if (value !== null) {
+				var piece = elm('div', {
+					className: 'gamePiece '+['white', 'black'][value]
+				}, this.element);
+			}
+		},
+		highlight: function(time) {
+			var _this = this;
+			this.element.style.backgroundColor = 'rgba(100,0,0,0.4)';
+			setTimeout(function() {
+				_this.element.style.backgroundColor = '';
+			}, time);
+		}
 	}
 	
-	this.placePiece = function(cell) {
-		// console.log(cell);
-		var pos = resolvePos(cell);
-		_this.moves++;
-		_this.board[pos[0]][pos[1]] = _this.turn;
-		cell.innerHTML = '';
-		var piece = elm('div', {
-			className: 'gamePiece '+players[_this.turn]
-		}, cell);
-		// changeTurn();
+	for (y = 0; y < size; y++) {
+		var row = [];
+		this.push(row);
+		
+		var rowElement = elm('div', {className: 'row'}, this.element);
+		
+		for (x = 0; x < size; x++) {
+			row.push(new Square(rowElement, x, y));
+		}
 	}
 	
-	// set up initial state
-	simulateGameBoard();
-	parentElement.appendChild(this.infoDiv);
-	parentElement.appendChild(createGameBoard());
-	var cords = ['33', '34', '44', '43'];
-	for(var i in cords) {
-		this.placePiece(getEl(cords[i]));
-		changeTurn();
+}
+GameBoard.prototype = new Array();
+GameBoard.prototype.cell = function(x,y) {
+	var fake = {state: null, highlight: function() {}};
+	if (this[y] === undefined) return fake;
+	if (this[y][x] === undefined) return fake;
+	return this[y][x];
+}
+GameBoard.prototype.eachCell = function(callback) {
+	for (y = 0; y < this.size; y++) {
+		for (x = 0; x < this.size; x++) {
+			callback(this[y][x]);
+		}
 	}
+}
+GameBoard.prototype.countCells = function() {
+	var scores = [0,0];
+	for (y = 0; y < this.size; y++) {
+		for (x = 0; x < this.size; x++) {
+			var s = this[y][x].state;
+			if (s === null) continue;
+			scores[s]++;
+		}
+	}
+	return scores;
+}
+
+function ReversiGame(parentElement) {
+	if (parentElement === undefined) parentElement = document.body;
+	this.board = new GameBoard(8, this);
+	this.scoreBoard = elm('div', {id:'scoreBoard'}, parentElement);
+	parentElement.appendChild(this.board.element);
+	
+	// initial pieces
+	this.board.cell(3,3).state = 0;
+	this.board.cell(4,3).state = 1;
+	this.board.cell(3,4).state = 1;
+	this.board.cell(4,4).state = 0;
+	
+	this.updateScoreBoard();
 	
 	return this;
+}
+
+ReversiGame.prototype = {
+	turn: 0,
+	moves: 0,
+	players: [{
+		name: 'white',
+		type: 0
+	}, {
+		name: 'black',
+		type: 1
+	}],
+	changeTurn: function() {
+		this.turn = Math.abs(this.turn -1)
+		console.log(this.players[this.turn].name+"'s turn.");
+		var moves = this.movesAvailable();
+		if (!moves) {
+			console.log('no moves!');
+			this.turn = Math.abs(this.turn -1);
+		}
+		this.updateScoreBoard();
+		
+		// player is a robot
+		if (this.players[this.turn].type != 0) {
+			var ai = new ReversiAI(this.players[this.turn].type);
+			var _game = this;
+			setTimeout(function() {
+				ai.makeMove(moves, _game);
+			}, 250);
+		}
+	},
+	movesAvailable: function() {
+		var _this = this;
+		var found = [];
+		for (y = 0; y < this.board.size; y++) {
+			for (x = 0; x < this.board.size; x++) {
+				var c = this.board[y][x];
+				if (c.state != null) continue;
+				if (this.validMove(c)) {
+					// c.highlight(1000);
+					found.push(c);
+				}
+			}
+		}
+		return (found.length > 0) ? found : false;;
+	},
+	makeMove: function(cell) {
+		if (cell.state == null) {
+			vds = this.validMove(cell);
+			if (vds) {
+				cell.state = this.turn;
+				for (var i in vds) this.claim(cell, vds[i]);
+				this.changeTurn();
+			} else {
+				cell.highlight(100);
+			}
+		}
+	},
+	// cell, direction, search
+	isSandwich: function(c,d,s) {
+		if (d.x == 0 && d.y == 0)
+			return false;
+		if (c.x === undefined)
+			return false;
+		if (s == undefined)
+			s = 0;
+
+		// next cell in direction
+		c = this.board.cell(c.x + d.x, c.y + d.y);
+		
+		if (c.state === null)
+			return false;
+
+		if (c.state == this.turn)
+			return (s > 0); // if search is not imediately next to cell
+
+		// continue
+		return this.isSandwich(c, d, (s + 1));
+	},
+	validMove: function(cell) {
+		// check the 8 directions
+		var vd = []; // valid directions
+		for (var x = -1; x <= 1; x++) {
+			for (var y = -1; y <= 1; y++) {
+				if (x == 0 && y == 0) continue;
+				var d = {x:x, y:y};
+				if (this.isSandwich(cell, d)) vd.push(d);
+			}
+		}
+		// return valid directions or false if none
+		return (vd.length > 0) ? vd : false;
+	},
+	claim: function(c, d) {
+		c = this.board.cell(c.x + d.x, c.y + d.y);
+		if (c.state === null || c.state === Math.abs(this.turn -1)) {
+			c.state = this.turn;
+			// c.highlight(500);
+			this.claim(c,d);
+		}
+	},
+	updateScoreBoard: function() {
+		this.scoreBoard.innerHTML = '';
+		this.scoreBoard.appendChild(elm('h1', {
+			innerHTML: this.players[this.turn].name+"'s Turn."
+		}));
+		var scores = this.board.countCells();
+		this.scoreBoard.appendChild(elm('p', {
+			innerHTML: this.players[0].name+': '+scores[0]+', '+this.players[1].name+': '+scores[1]
+		}));
+	}
+}
+
+function ReversiAI(type) {
+	this.type = type;
+};
+ReversiAI.prototype = {
+	makeMove: function(moves, game) {
+		var move = randInt(0, moves.length);
+		console.log(moves);
+		console.log('Move:'+move);
+		game.makeMove(moves[move]);
+	}
 }
 
 window.onload = function() {

@@ -46,14 +46,6 @@ h1 {
 	padding: 30px;
 }
 
-div.info {
-	width: 100%;
-	text-align: center;
-	text-transform: capitalize;
-	font-family: "Ubuntu";
-	color: #555;
-}
-
 div.row {
 	height: 50px;
 }
@@ -121,6 +113,13 @@ div.gamePiece.black {
 	box-shadow: 0 0 10px rgba(0,0,0,0.1);
 	background-image: url('purty_wood.png');
 	margin: 10px auto;
+}
+#scoreBoard {
+	width: 100%;
+	text-align: center;
+	text-transform: capitalize;
+	font-family: "Ubuntu";
+	color: #555;
 }
 
 ::selection {
