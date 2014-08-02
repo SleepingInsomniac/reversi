@@ -94,10 +94,26 @@ GameBoard.prototype.countCells = function() {
 	return scores;
 }
 
+function ScoreBoard(game) {
+	this._game = game;
+	this.container = elm('div', {id:'scoreBoard'});
+	this.turn = elm('h1',{},this.container);
+	this.scores = elm('div', {className: 'scores'}, this.container);
+	this.scoreBlack = elm('span', {}, this.scores);
+	this.scoreWhite = elm('span', {}, this.scores);
+}
+ScoreBoard.prototype = {
+	
+}
+
+
 function ReversiGame(parentElement) {
 	if (parentElement === undefined) parentElement = document.body;
 	this.board = new GameBoard(8, this);
-	this.scoreBoard = elm('div', {id:'scoreBoard'}, parentElement);
+	
+	this.scoreBoard = new ScoreBoard(this);
+	
+	parentElement.appendChild(this.scoreBoard.container);
 	parentElement.appendChild(this.board.element);
 	
 	// initial pieces
@@ -105,6 +121,10 @@ function ReversiGame(parentElement) {
 	this.board.cell(4,3).state = 1;
 	this.board.cell(3,4).state = 1;
 	this.board.cell(4,4).state = 0;
+	
+	// add players
+	this.players.push(new Player('White', 0, this));
+	this.players.push(new Player('Black', 1, this));
 	
 	this.updateScoreBoard();
 	
@@ -114,31 +134,25 @@ function ReversiGame(parentElement) {
 ReversiGame.prototype = {
 	turn: 0,
 	moves: 0,
-	players: [{
-		name: 'white',
-		type: 0
-	}, {
-		name: 'black',
-		type: 1
-	}],
-	changeTurn: function() {
-		this.turn = Math.abs(this.turn -1)
-		console.log(this.players[this.turn].name+"'s turn.");
+	players: [],
+	changeTurn: function(skipped) {
+		this.turn = Math.abs(this.turn -1);
 		var moves = this.movesAvailable();
 		if (!moves) {
 			console.log('no moves!');
-			this.turn = Math.abs(this.turn -1);
+			return skipped ? this.gameOver() : this.changeTurn(true);
 		}
-		this.updateScoreBoard();
 		
 		// player is a robot
-		if (this.players[this.turn].type != 0) {
+		if (this.players[this.turn].type != 0 && moves) {
+			for (i in moves) moves[i].highlight(250);
 			var ai = new ReversiAI(this.players[this.turn].type);
 			var _game = this;
 			setTimeout(function() {
-				ai.makeMove(moves, _game);
-			}, 250);
+				ai.think(moves, _game);
+			}, 100);
 		}
+		this.updateScoreBoard();
 	},
 	movesAvailable: function() {
 		var _this = this;
@@ -210,14 +224,33 @@ ReversiGame.prototype = {
 		}
 	},
 	updateScoreBoard: function() {
-		this.scoreBoard.innerHTML = '';
-		this.scoreBoard.appendChild(elm('h1', {
-			innerHTML: this.players[this.turn].name+"'s Turn."
-		}));
+		this.scoreBoard.turn.innerHTML = this.players[this.turn].name+"'s Turn.";
 		var scores = this.board.countCells();
-		this.scoreBoard.appendChild(elm('p', {
-			innerHTML: this.players[0].name+': '+scores[0]+', '+this.players[1].name+': '+scores[1]
-		}));
+		this.scoreBoard.scoreWhite.innerHTML = this.players[0].name+': '+scores[0];
+		this.scoreBoard.scoreBlack.innerHTML = this.players[1].name+': '+scores[1];
+		if (scores[0] + scores[1] >= 64) this.gameOver();
+	},
+	gameOver: function() {
+		console.log('Game Over');
+		this.players[0].type = 0;
+		this.players[1].type = 1;
+	}
+}
+
+function Player(name, type, game) {
+	this.name = name;
+	this._type = type;
+	this._game = game;
+}
+Player.prototype = {
+	name: 'player',
+	get type() {
+		return this._type;
+	},
+	set type(value) {
+		this._type = value;
+		this._game.turn = Math.abs(this._game.turn -1);
+		// this._game.changeTurn(true);
 	}
 }
 
@@ -225,11 +258,35 @@ function ReversiAI(type) {
 	this.type = type;
 };
 ReversiAI.prototype = {
-	makeMove: function(moves, game) {
-		var move = randInt(0, moves.length);
-		console.log(moves);
-		console.log('Move:'+move);
-		game.makeMove(moves[move]);
+	think: function(moves, game) {
+		// console.log(moves.length);
+		switch(this.type) {
+			case 1: this.logicRandom(moves, game); break;
+			case 2: this.logicEdgy(moves, game); break;
+		}
+	},
+	logicRandom: function (moves, game) {
+		console.log('Employing Random Logic');
+		var r = randInt(0, moves.length);
+		game.makeMove(moves[r]);
+	},
+	logicEdgy: function(moves, game) {
+		console.log('Employing Edgy Logic');
+		var preferred = [];
+		for (i in moves) {
+			var m = moves[i];
+			if (m.x == 0 || m.x == game.board.size -1 || m.y == 0 || m.y == game.board.size -1) {
+				preferred.push(m);
+				console.log('preferred:'+m.x+','+m.y);
+			}
+		}
+		if (preferred.length > 0) {
+			var r = randInt(0, preferred.length);
+			game.makeMove(preferred[r]);
+		} else {
+			var r = randInt(0, moves.length);
+			game.makeMove(moves[r]);
+		}
 	}
 }
 
