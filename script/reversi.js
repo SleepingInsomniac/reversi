@@ -118,13 +118,13 @@ function ReversiGame(parentElement) {
 	
 	// initial pieces
 	this.board.cell(3,3).state = 0;
-	this.board.cell(4,3).state = 1;
 	this.board.cell(3,4).state = 1;
+	this.board.cell(4,3).state = 1;
 	this.board.cell(4,4).state = 0;
 	
 	// add players
-	this.players.push(new Player('White', 0, this));
-	this.players.push(new Player('Black', 1, this));
+	this.players.push(new Player('Human', 1, this));
+	this.players.push(new Player('Computer', 3, this));
 	
 	this.updateScoreBoard();
 	
@@ -141,16 +141,18 @@ ReversiGame.prototype = {
 		if (!moves) {
 			console.log('no moves!');
 			return skipped ? this.gameOver() : this.changeTurn(true);
+		} else {
+			this.moves++;
 		}
 		
 		// player is a robot
 		if (this.players[this.turn].type != 0 && moves) {
-			for (i in moves) moves[i].highlight(250);
-			var ai = new ReversiAI(this.players[this.turn].type);
+			var delay = 1;
+			for (i in moves) moves[i].highlight(delay);
 			var _game = this;
 			setTimeout(function() {
-				ai.think(moves, _game);
-			}, 100);
+				_game.players[_game.turn].think(moves, _game);
+			}, delay);
 		}
 		this.updateScoreBoard();
 	},
@@ -197,21 +199,27 @@ ReversiGame.prototype = {
 			return false;
 
 		if (c.state == this.turn)
-			return (s > 0); // if search is not imediately next to cell
+			return (s > 0) ? s : false; // if search is not imediately next to cell
 
 		// continue
 		return this.isSandwich(c, d, (s + 1));
 	},
 	validMove: function(cell) {
+		var st = 0; //score total
 		// check the 8 directions
 		var vd = []; // valid directions
 		for (var x = -1; x <= 1; x++) {
 			for (var y = -1; y <= 1; y++) {
 				if (x == 0 && y == 0) continue;
 				var d = {x:x, y:y};
-				if (this.isSandwich(cell, d)) vd.push(d);
+				var s;
+				if (s = this.isSandwich(cell, d)) {
+					st += s;
+					vd.push(d);
+				}
 			}
 		}
+		cell.score = st;
 		// return valid directions or false if none
 		return (vd.length > 0) ? vd : false;
 	},
@@ -251,27 +259,28 @@ Player.prototype = {
 		this._type = value;
 		this._game.turn = Math.abs(this._game.turn -1);
 		// this._game.changeTurn(true);
-	}
-}
-
-function ReversiAI(type) {
-	this.type = type;
-};
-ReversiAI.prototype = {
-	think: function(moves, game) {
-		// console.log(moves.length);
-		switch(this.type) {
-			case 1: this.logicRandom(moves, game); break;
-			case 2: this.logicEdgy(moves, game); break;
-		}
 	},
-	logicRandom: function (moves, game) {
-		console.log('Employing Random Logic');
+	
+	// AI methods
+	think: function(moves, game) {
+		switch(this.type) {
+			// case 1 is random
+			case 2:
+				moves = this.edgyFilter(moves, game);
+				break;
+			case 3:
+				moves = this.greedyFilter(moves, game);
+				break;
+			case 4:
+				moves = this.edgyFilter(moves, game);
+				moves = this.greedyFilter(moves, game);
+				break;
+		}
 		var r = randInt(0, moves.length);
 		game.makeMove(moves[r]);
 	},
-	logicEdgy: function(moves, game) {
-		console.log('Employing Edgy Logic');
+	edgyFilter: function(moves, game) {
+		console.log('AI: perfer edge');
 		var preferred = [];
 		for (i in moves) {
 			var m = moves[i];
@@ -281,13 +290,28 @@ ReversiAI.prototype = {
 			}
 		}
 		if (preferred.length > 0) {
-			var r = randInt(0, preferred.length);
-			game.makeMove(preferred[r]);
+			return preferred;
 		} else {
-			var r = randInt(0, moves.length);
-			game.makeMove(moves[r]);
+			return moves;
 		}
+	},
+	greedyFilter: function(moves, game) {
+		console.log('AI: filtering best score');
+		var most = moves[0];
+		for (var i in moves) {
+			if (moves[i].score > most.score) {
+				most = moves[i];
+			}
+		}
+		var r = [];
+		for (var i in moves) {
+			if (moves[i].score == most.score) {
+				r.push(moves[i]);
+			}
+		}
+		return r;
 	}
+	
 }
 
 window.onload = function() {
